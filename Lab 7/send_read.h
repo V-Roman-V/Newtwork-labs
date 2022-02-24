@@ -2,22 +2,30 @@
 #define SEND_READ_H
 
 #include <stdio.h>
-#include <sys/socket.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
-void Send(int sock, char *str) {
-	send(sock , str , strlen(str) , 0 );
+
+void Send(int sock, struct sockaddr_in *srvaddr, const char *str){
+	sendto(sock, str, strlen(str), MSG_CONFIRM, ( struct sockaddr *)srvaddr,sizeof(*srvaddr));
 	printf("send msg: \"%s\"\n", str);
 }
 
-void Read(int sock, char* str) {
+void Read(int sock, struct sockaddr_in *srvaddr, char* str) {
+  static unsigned int len;
 	if (str == NULL){
 		char buffer[1024] = {0};
-		read( sock , buffer, 1024);
-		printf("read msg: \"%s\"\n",buffer );
+		int n = recvfrom(sock, buffer, 1024, MSG_WAITALL, (struct sockaddr *) srvaddr,	&len);
+		buffer[n] = '\0';
+		printf("read msg: \"%s\"\n",buffer);
 	} else {
-		read( sock , str, 1024);
+		int n = recvfrom(sock, str, 1024, MSG_WAITALL, (struct sockaddr *) srvaddr,	NULL);
+		str[n] = '\0';
 		printf("read msg: \"%s\"\n",str );
 	}
 }
